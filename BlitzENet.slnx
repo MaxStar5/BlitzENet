@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="BlitzENet.vcxproj" Id="c297767f-48e6-4218-82b0-2504fb7bdf4d" />
+</Solution>
