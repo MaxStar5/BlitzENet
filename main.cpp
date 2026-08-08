@@ -2,11 +2,18 @@
 
 #include <enet.h>
 #include <vector>
-
+#include <string>
 
 std::vector<uint8_t> output;
 uint8_t* input;
-uint8_t inputPos;
+uint8_t inputPos, inputSize;
+
+// save event
+ENetPeer* eventPeer;
+ENetEventType eventType;
+uint32_t eventData;
+ENetPacket* eventPacket;
+
 
 DLL(int) createHost(int ip, int port, int maxClients, int channels) {
 	// if ip and port are 0 return client
@@ -26,46 +33,41 @@ DLL(int) connectHost(ENetHost* host, const char* ip, int port, int channels, int
 	enet_address_set_host(&address, ip);
 
 	ENetPeer* peer;
-	if (!output.size()) {
-		peer = enet_host_connect(host, &address, channels, data);
-	}
-	else {
-		peer = enet_host_connect(host, &address, channels, data);
-	}
+	peer = enet_host_connect(host, &address, channels, data);
 
 	return (int)peer;
 }
 
-DLL(void) disconnectPeer(ENetHost* host, ENetPeer* peer, ENetEvent* event, int data) {
-	if (!output.size()) {
-		enet_peer_disconnect(peer, data);
-	}
-	else {
-		enet_peer_disconnect(peer, data);
-	}
-	enet_host_service(host, event, 0);
-
+DLL(void) destroyHost(ENetHost* host) {
 	enet_host_destroy(host);
 }
 
+DLL(void) disconnectPeer(ENetPeer* peer, int data) {
+	enet_peer_disconnect(peer, data);
+}
+
+DLL(void) disconnectPeerNow(ENetPeer* peer, int data) {
+	enet_peer_disconnect_now(peer, data);
+}
+DLL(void) setPeerTimeout(ENetPeer* peer, int timeoutLimit, int timeoutMinimum, int timeoutMaximum) {
+	enet_peer_timeout(peer, timeoutLimit, timeoutMinimum, timeoutMaximum);
+}
 DLL(void) peerReset(ENetPeer* peer) {
 	enet_peer_reset(peer);
 }
-DLL(int) hostService(ENetHost* host, int timeout) {
-	ENetEvent event{};
 
-	if (enet_host_service(host, &event, timeout) > 0) {
-		return (int)&event;
-	}
-	return 0;
+DLL(void) hostFlush(ENetHost* host) {
+	enet_host_flush(host);
 }
 
-DLL(int) getEventType(ENetEvent* event) {
-	return event->type;
-}
-DLL(int) getEventPeer(ENetEvent* event) {
-	return (int)event->peer;
-}
+DLL(int) getEventType() { return eventType; }
+
+DLL(int) getEventPeer() { return (int)eventPeer; }
+
+DLL(int) getEventData() { return eventData; }
+
+DLL(int) getPacketSize() { return inputSize; }
+
 DLL(int) sendPacket(ENetPeer* peer, int channel, int flag) {
 	ENetPacket* packet = enet_packet_create(output.data(), output.size(), flag);
 	if (!packet) return false;
@@ -74,24 +76,44 @@ DLL(int) sendPacket(ENetPeer* peer, int channel, int flag) {
 		enet_packet_destroy(packet);
 		return false;
 	}
-
 	return true;
 }
+DLL(int) hostService(ENetHost* host, int timeout) {
+	ENetEvent event{};
+	int i = enet_host_service(host, &event, timeout);
 
-DLL(void) readPacket(ENetEvent* event) {
-	input = event->packet->data;
+	eventType = event.type;
+	eventData = event.data;
+	eventPeer = event.peer;
+	if (event.type == ENET_EVENT_TYPE_RECEIVE) {
+		eventPacket = event.packet;
+		input = event.packet->data;
+		inputSize = event.packet->dataLength;
+	}
+	else {
+		eventPacket = nullptr;
+		input = nullptr;
+		inputSize = 0;
+	}
+	
 	inputPos = 0;
-
-	enet_packet_destroy(event->packet);
-	enet_free(event);
+	return i;
 }
 
 template<typename T>
 
-T read() {
-	T* t = (T*)(input + inputPos);
+T read()
+{
+	if (inputPos + sizeof(T) > inputSize) {
+		enet_packet_destroy(eventPacket);
+		return T{};
+	}
+
+	T value;
+	memcpy(&value, input + inputPos, sizeof(T));
 	inputPos += sizeof(T);
-	return *t;
+
+	return value;
 }
 
 DLL(int) readByte() {
@@ -110,8 +132,19 @@ DLL(int) readFloat() {
 	return read<float>();
 }
 
-DLL(const char*) readString() {
-	return read<const char*>();
+DLL(const char*) readString()
+{
+	static std::string result;
+
+	unsigned int start = inputPos;
+
+	while (inputPos < inputSize && input[inputPos] != 0) inputPos++;
+
+	result.assign(reinterpret_cast<const char*>(input + start), inputPos - start);
+
+	if (inputPos < inputSize) inputPos++;
+
+	return result.c_str();
 }
 
 template<typename T>
@@ -140,8 +173,11 @@ DLL(void) pushFloat(float f) {
 	Push(f);
 }
 
-DLL(void) pushString(const char* s) {
-	Push(s);
+DLL(void) pushString(const char* s)
+{
+	const unsigned int length = std::strlen(s);
+
+	output.insert(output.end(), reinterpret_cast<const uint8_t*>(s), reinterpret_cast<const uint8_t*>(s) + length);
 }
 
 DLL(void) clearOutput() {
