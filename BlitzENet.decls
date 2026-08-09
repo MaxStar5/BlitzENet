@@ -30,6 +30,6 @@ ENet_ReadInt%():"_readInt@0"
 ENet_ReadShort%():"_readShort@0"
 ENet_ReadString$():"_readString@0"
 
-ENet_PacketFinished%():_"packetFinished@0"
+ENet_PacketFinished%():"_packetFinished@0"
 ENet_GetPacketSize%():"_getPacketSize@0"
 ENet_SendPacket%(peer%, channel%, flag%):"_sendPacket@12"
