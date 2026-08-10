@@ -105,7 +105,6 @@ template<typename T>
 T read()
 {
 	if (inputPos + sizeof(T) > inputSize) {
-		enet_packet_destroy(eventPacket);
 		return T{};
 	}
 
@@ -132,8 +131,7 @@ DLL(int) readFloat() {
 	return read<float>();
 }
 
-DLL(const char*) readString()
-{
+DLL(const char*) readString() {
 	static std::string result;
 
 	unsigned int start = inputPos;
@@ -145,6 +143,10 @@ DLL(const char*) readString()
 	if (inputPos < inputSize) inputPos++;
 
 	return result.c_str();
+}
+
+DLL(void) clearInput() {
+	enet_packet_destroy(eventPacket);
 }
 
 template<typename T>
@@ -178,6 +180,14 @@ DLL(void) pushString(const char* s)
 	const unsigned int length = std::strlen(s);
 
 	output.insert(output.end(), reinterpret_cast<const uint8_t*>(s), reinterpret_cast<const uint8_t*>(s) + length);
+}
+
+DLL(void) pushBytes(void** bank, const int offset, const int size) {
+	if (!bank || !*bank || offset < 0 || size <= 0) return;
+
+	const uint8_t* data = static_cast<const uint8_t*>(*bank) + offset;
+
+	output.insert(output.end(), data, data + size);
 }
 
 DLL(void) clearOutput() {
