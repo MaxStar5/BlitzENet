@@ -4,7 +4,6 @@ ENet_Initialize():"_initialize@0"
 ENet_DeInitialize():"_deInitialize@0"
 
 ENet_ClearOutput():"_clearOutput@0"
-ENet_ClearInput():"_clearInput@0"
 ENet_ConnectHost%(host%, ip$, port%, channels%, data%):"_connectHost@20"
 ENet_CreateHost%(ip%, port%, maxClients%, channels%):"_createHost@16"
 ENet_HostService%(host%, timeout%):"_hostService@8"
