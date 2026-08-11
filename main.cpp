@@ -78,6 +78,7 @@ DLL(int) sendPacket(ENetPeer* peer, int channel, int flag) {
 	}
 	return true;
 }
+
 DLL(int) hostService(ENetHost* host, int timeout) {
 	ENetEvent event{};
 	int i = enet_host_service(host, &event, timeout);
@@ -86,11 +87,13 @@ DLL(int) hostService(ENetHost* host, int timeout) {
 	eventData = event.data;
 	eventPeer = event.peer;
 	if (event.type == ENET_EVENT_TYPE_RECEIVE) {
+		if (eventPacket) enet_packet_destroy(eventPacket);
 		eventPacket = event.packet;
 		input = event.packet->data;
 		inputSize = event.packet->dataLength;
 	}
 	else {
+		if (eventPacket) enet_packet_destroy(eventPacket);
 		eventPacket = nullptr;
 		input = nullptr;
 		inputSize = 0;
@@ -143,10 +146,6 @@ DLL(const char*) readString() {
 	if (inputPos < inputSize) inputPos++;
 
 	return result.c_str();
-}
-
-DLL(void) clearInput() {
-	enet_packet_destroy(eventPacket);
 }
 
 template<typename T>
