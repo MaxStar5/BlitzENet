@@ -153,6 +153,16 @@ DLL(const char*) readString() {
 	return result.c_str();
 }
 
+DLL(void) readBytes(void** bank, const int offset, const int size) {
+	if (!bank || !*bank || offset < 0 || size <= 0) return; 
+	if (inputPos + size > inputSize) return;
+
+	uint8_t* dest = (uint8_t*)(*bank) + offset;
+	std::memcpy(dest, input + inputPos, size);
+
+	inputPos += size;
+}
+
 template<typename T>
 
 static void Push(const T& value) {
