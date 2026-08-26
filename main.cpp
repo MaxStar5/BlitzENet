@@ -49,9 +49,14 @@ DLL(void) disconnectPeer(ENetPeer* peer, int data) {
 DLL(void) disconnectPeerNow(ENetPeer* peer, int data) {
 	enet_peer_disconnect_now(peer, data);
 }
+
+DLL(int) getPeerIP(ENetPeer* peer) { return peer->address.host; }
+DLL(int) getPeerPort(ENetPeer* peer) { return peer->address.port; }
+
 DLL(void) setPeerTimeout(ENetPeer* peer, int timeoutLimit, int timeoutMinimum, int timeoutMaximum) {
 	enet_peer_timeout(peer, timeoutLimit, timeoutMinimum, timeoutMaximum);
 }
+
 DLL(void) peerReset(ENetPeer* peer) {
 	enet_peer_reset(peer);
 }
