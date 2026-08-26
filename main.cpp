@@ -6,7 +6,7 @@
 
 std::vector<uint8_t> output;
 uint8_t* input;
-uint8_t inputPos, inputSize;
+uint16_t inputPos, inputSize;
 
 // save event
 ENetPeer* eventPeer;
@@ -71,7 +71,7 @@ DLL(int) getEventPeer() { return (int)eventPeer; }
 
 DLL(int) getEventData() { return eventData; }
 
-DLL(int) getPacketSize() { return inputSize; }
+DLL(int) getPacketAvail() { return (inputSize - inputPos); }
 
 DLL(int) sendPacket(ENetPeer* peer, int channel, int flag) {
 	ENetPacket* packet = enet_packet_create(output.data(), output.size(), flag);

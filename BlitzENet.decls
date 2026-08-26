@@ -35,5 +35,5 @@ ENet_ReadString$():"_readString@0"
 ENet_ReadBytes(bank*, offset%, size%):"_readBytes@12"
 
 ENet_PacketFinished%():"_packetFinished@0"
-ENet_GetPacketSize%():"_getPacketSize@0"
+ENet_GetPacketAvail%():"_getPacketAvail@0"
 ENet_SendPacket%(peer%, channel%, flag%):"_sendPacket@12"
